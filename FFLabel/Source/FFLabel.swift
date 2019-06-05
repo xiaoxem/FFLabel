@@ -3,6 +3,7 @@
 //  FFLabel
 //
 //  Created by 刘凡 on 15/7/18.
+//  Modify by xiaoxin on 19/6/5  to swift 4.2
 //  Copyright © 2015年 joyios. All rights reserved.
 //
 
@@ -10,13 +11,17 @@ import UIKit
 
 @objc
 public protocol FFLabelDelegate: NSObjectProtocol {
+    /// 选中链接文本
+    ///
+    /// - parameter label: label
+    /// - parameter text:  选中的文本
     @objc optional func labelDidSelectedLinkText(label: FFLabel, text: String)
 }
 
 public class FFLabel: UILabel {
 
-    public var linkTextColor = UIColor.blue()
-    public var selectedBackgroudColor = UIColor.lightGray()
+    public var linkTextColor = UIColor.blue
+    public var selectedBackgroudColor = UIColor.lightGray
     public weak var delegate: FFLabelDelegate?
     
     // MARK: - override properties
@@ -26,7 +31,7 @@ public class FFLabel: UILabel {
         }
     }
     
-    override public var attributedText: AttributedString? {
+    override public var attributedText: NSAttributedString? {
         didSet {
             updateTextStorage()
         }
@@ -68,11 +73,11 @@ public class FFLabel: UILabel {
         var range = NSRange(location: 0, length: 0)
         var attributes = attrStringM.attributes(at: 0, effectiveRange: &range)
         
-        attributes[NSFontAttributeName] = font!
-        attributes[NSForegroundColorAttributeName] = textColor
+        attributes[NSAttributedString.Key.font] = font!
+        attributes[NSAttributedString.Key.foregroundColor] = textColor
         attrStringM.addAttributes(attributes, range: range)
         
-        attributes[NSForegroundColorAttributeName] = linkTextColor
+        attributes[NSAttributedString.Key.foregroundColor] = linkTextColor
         
         for r in linkRanges {
             attrStringM.setAttributes(attributes, range: r)
@@ -81,13 +86,13 @@ public class FFLabel: UILabel {
     
     /// use regex check all link ranges
     private let patterns = ["[a-zA-Z]*://[a-zA-Z0-9/\\.]*", "#.*?#", "@[\\u4e00-\\u9fa5a-zA-Z0-9_-]*"]
-    private func regexLinkRanges(_ attrString: AttributedString) {
+    private func regexLinkRanges(_ attrString: NSAttributedString) {
         linkRanges.removeAll()
         let regexRange = NSRange(location: 0, length: attrString.string.characters.count)
         
         for pattern in patterns {
-            let regex = try! RegularExpression(pattern: pattern, options: RegularExpression.Options.dotMatchesLineSeparators)
-            let results = regex.matches(in: attrString.string, options: RegularExpression.MatchingOptions(rawValue: 0), range: regexRange)
+            let regex = try! NSRegularExpression(pattern: pattern, options: NSRegularExpression.Options.dotMatchesLineSeparators)
+            let results = regex.matches(in: attrString.string, options: NSRegularExpression.MatchingOptions(rawValue: 0), range: regexRange)
             
             for r in results {
                 linkRanges.append(r.range(at: 0))
@@ -96,7 +101,7 @@ public class FFLabel: UILabel {
     }
     
     /// add line break mode
-    private func addLineBreak(_ attrString: AttributedString) -> NSMutableAttributedString {
+    private func addLineBreak(_ attrString: NSAttributedString) -> NSMutableAttributedString {
         let attrStringM = NSMutableAttributedString(attributedString: attrString)
         
         if attrStringM.length == 0 {
@@ -105,7 +110,7 @@ public class FFLabel: UILabel {
         
         var range = NSRange(location: 0, length: 0)
         var attributes = attrStringM.attributes(at: 0, effectiveRange: &range)
-        var paragraphStyle = attributes[NSParagraphStyleAttributeName] as? NSMutableParagraphStyle
+        var paragraphStyle = attributes[NSAttributedString.Key.paragraphStyle] as? NSMutableParagraphStyle
         
         if paragraphStyle != nil {
             paragraphStyle!.lineBreakMode = NSLineBreakMode.byWordWrapping
@@ -113,7 +118,7 @@ public class FFLabel: UILabel {
             // iOS 8.0 can not get the paragraphStyle directly
             paragraphStyle = NSMutableParagraphStyle()
             paragraphStyle!.lineBreakMode = NSLineBreakMode.byWordWrapping
-            attributes[NSParagraphStyleAttributeName] = paragraphStyle
+            attributes[NSAttributedString.Key.paragraphStyle] = paragraphStyle
             
             attrStringM.setAttributes(attributes, range: range)
         }
@@ -168,9 +173,10 @@ public class FFLabel: UILabel {
             delegate?.labelDidSelectedLinkText?(label: self, text: text)
             
             let when = DispatchTime.now() + Double(Int64(0.25 * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC)
-            DispatchQueue.main.after(when: when) {
+            DispatchQueue.main.asyncAfter(deadline: when){
                 self.modifySelectedAttribute(false)
             }
+           
         }
     }
     
@@ -184,13 +190,13 @@ public class FFLabel: UILabel {
         }
         
         var attributes = textStorage.attributes(at: 0, effectiveRange: nil)
-        attributes[NSForegroundColorAttributeName] = linkTextColor
+        attributes[NSAttributedString.Key.foregroundColor] = linkTextColor
         let range = selectedRange!
         
         if isSet {
-            attributes[NSBackgroundColorAttributeName] = selectedBackgroudColor
+            attributes[NSAttributedString.Key.backgroundColor] = selectedBackgroudColor
         } else {
-            attributes[NSBackgroundColorAttributeName] = UIColor.clear()
+            attributes[NSAttributedString.Key.backgroundColor] = UIColor.clear
             selectedRange = nil
         }
         
